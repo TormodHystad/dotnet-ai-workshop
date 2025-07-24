@@ -5,10 +5,10 @@ using System.ComponentModel.DataAnnotations;
 namespace QuizApp.Components.Pages;
 
 // TODO: Get an IChatClient from DI
-public partial class Quiz : ComponentBase
+public partial class Quiz(IChatClient chatClient ) : ComponentBase
 {
     // TODO: Decide on a quiz subject
-    private const string QuizSubject = "Your choice of subject goes here. Be descriptive.";
+    private const string QuizSubject = "Larvik in the 1900s";
 
     private ElementReference answerInput;
     private int numQuestions = 5;
@@ -45,6 +45,19 @@ public partial class Quiz : ComponentBase
         //  - Ask the LLM for a question on the subject 'QuizSubject'
         //  - Assign the question text to 'currentQuestionText'
         //  - Make sure it doesn't repeat the previous questions
+        var prompt = $"""
+            Provide a quiz question about the following subject: {QuizSubject}
+            Reply only with the question and no other text. Ask factual questions for which
+            the answer only needs to be a single word or phrase.
+            """;
+        var response = await chatClient.GetResponseAsync(prompt);
+        currentQuestionText = response.Text;
+
+        // If we have a question, focus the input field
+        if (!string.IsNullOrEmpty(currentQuestionText))
+        {
+            await InvokeAsync(() => StateHasChanged());
+        }
     }
 
     private async Task SubmitAnswerAsync()
